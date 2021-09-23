@@ -1,2 +1,8 @@
 __pycache__
 interesting_coding_ideas.py
+
+# Ignore determined extention files:
+*.png
+*.xlsx
+*.csv
+*.pdf
