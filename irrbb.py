@@ -413,7 +413,7 @@ def find_string(pattern, string_list):
         if pattern in s:
             return s
         else: continue
-    print('No match')
+    print(f'No match for {pattern}')
 
 def clean_excel_file(file_path, skiprows=8, column_names=[], 
     drop_columns=None, as_percentage=None, subset_dropna=[],
