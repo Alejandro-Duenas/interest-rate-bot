@@ -414,6 +414,63 @@ def find_string(pattern, string_list):
             return s
         else: continue
     print('No match')
+
+def clean_excel_file(file_path, skiprows=8, column_names=[], 
+    drop_columns=None, as_percentage=None, subset_dropna=[],
+    date_column='Fecha', value_columns=[]):
+    """This functions reads an Excel file (the model used is the format 
+    given by the BanRep Excel files) and cleans the data so that it can 
+    be used and analyzed.
+    
+    Inputs:
+    -------
+    file_path: string
+        String with the file path of the Excel file to be cleaned.
+    skiprows: Integer (default = 8)
+        Number of rows in the Excel file to be skipped during the read 
+        process.
+    column_names: List
+        List with the names of the columns that will remain after the 
+        clean process.
+    drop_columns: List (default = None)
+        List of the columns to be dropped. If None, nothing is dropped.
+    as_percentage: Boolean (default = True)
+        If true, the numerical columns will be divided by 100, so that 
+        they are expressed as percentage.
+    subset_dropna: list
+        List with initial columns that serve to drop rows if there's no
+        information.
+    date_column: str (default = 'Fecha')
+        Name of the column that contains dates. 
+    value_columns = string/list
+        Name/names of the columns that contain the analized values.
+    
+    Output:
+    -------
+    df: pandas DataFrame
+        Dataframe with the cleaned series.
+    """
+    if isinstance(subset_dropna, str):
+        subset_dropna = [subset_dropna]
+    df = pd.read_excel(file_path, skiprows=skiprows).dropna(
+        subset = subset_dropna
+    )
+
+    # Drop unwanted columns:
+    if not isinstance(drop_columns, type(None)):
+        df = df.drop(columns=drop_columns)
+    
+    df.columns = column_names
+    df[date_column] = pd.to_datetime(df[date_column])
+    df.sort_values(by=date_column, inplace=True)
+
+    # Convert to percentage:
+    if not isinstance(as_percentage, type(None)):
+        df[as_percentage] = df[as_percentage]/100
+
+    df = total_day_series(df, date_column, value_columns)
+    return df
+
 #------------------------------------------------------------------------------
 # 4. Classes
 
