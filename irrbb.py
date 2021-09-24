@@ -471,6 +471,46 @@ def clean_excel_file(file_path, skiprows=8, column_names=[],
     df = total_day_series(df, date_column, value_columns)
     return df
 
+def melt_df(df, column_names=[], sort_cols='', id_vars=[], value_vars=[]):
+    """
+    Melts the DataFrame so that the columns values are now thrown as rows,
+    generating vertical replication of the id vars.
+    
+    Inputs:
+    -------
+    df: Pandas DataFrame
+        Dataframe to be melted.
+    column_names: list
+        Names that the melted DataFrame output will have.
+    sort_col: string/list
+        Column(s) that will be sorted along the id_vars
+    
+    id_vars: string/list
+        Column(s) that will identify the melted columns
+    value_vars: string/list
+        Column(s) with the values that will be melted
+    
+    Outputs:
+    --------
+    melted_df: Pandas DataFrame
+        Dataframe with the melted information.
+    """
+    sort_dict = {var: val for val, var in enumerate(value_vars)}
+    melted_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars)
+    melted_df.columns = column_names
+    melted_df['sort_col'] = melted_df[sort_cols].apply(
+            lambda x: sort_dict[x]
+    )
+    if isinstance(id_vars, list):
+        sort_values = id_vars+['sort_col']
+    elif isinstance(id_vars, str):
+        sort_values = [id_vars] + ['sort_col']
+
+        print("You didn't passed as id_vars and sort_cols strings nor lists")
+    melted_df.sort_values(by=sort_values, inplace=True)
+    melted_df.drop(columns='sort_col', inplace=True)
+    
+    return melted_df
 #------------------------------------------------------------------------------
 # 4. Classes
 
