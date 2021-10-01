@@ -412,9 +412,9 @@ def find_string(pattern, string_list):
     for s in string_list:
         if pattern in s:
             return s
-        else: continue
-    print(f'No match for {pattern}')
+        else: return None               
 
+    
 def clean_excel_file(file_path, skiprows=8, column_names=[], 
     drop_columns=None, as_percentage=None, subset_dropna=[],
     date_column='Fecha', value_columns=[]):
