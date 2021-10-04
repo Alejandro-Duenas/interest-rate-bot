@@ -10,15 +10,13 @@ ca data storage web page.
 """
 
 # 1. Libraries
-from typing import Pattern
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 import time
-import re
-import os
-import pandas as pd
 import numpy as np
+import sys
+import os
 
 
 #------------------------------------------------------------------------------
@@ -113,7 +111,8 @@ class ChromeDownload(object):
 
     
     def download_files(self, xpaths_method=True, xpaths=xpaths, 
-        patterns=patterns, url=br_url, close_time=120):
+        patterns=patterns, url=br_url, close_time=120, attempts=5,
+        remove_files=False):
         """Downloads files using either the xpaths of the links or a
         pattern inside the download links. The method of search for
         those links is defiend by xpaths_method.
@@ -135,59 +134,87 @@ class ChromeDownload(object):
         close_time: int (default=180)
             Seconds that the object will wait until closing the webpage 
             where the downloads happened.
-        
+        attempts: int (default=5)
+            Number of download attempts in case of errors while 
+            connecting to the specified URL. If the error persist beyond
+            the number of allowed attempts, the program will exit.
+        remove_files: Boolean (default = False)
+            If true, removes all the files in the directory where the
+            new files are downloaded, determined by self.download_path
+
         Outputs:
         --------
         None
         """
-        if xpaths_method:
-            if self.install_driver:
-                browser = webdriver.Chrome(
-                    ChromeDriverManager().install(),
-                    chrome_options = self.chrome_options
-                    )
-            else:
-                browser = webdriver.Chrome(
-                    executable_path = self.chrome_driver_path,
-                    chrome_options = self.chrome_options
-                    )
-            browser.get(url)
-            time.sleep(3)
-            for xpath in xpaths:
-                browser.find_element_by_xpath(xpaths[xpath]).click()
-                print(f"{xpath} series clicked!")
-                time.sleep(5)
-            time.sleep(close_time)
-            browser.close()
-        else:
-            if self.install_driver:
-                browser = webdriver.Chrome(
-                    ChromeDriverManager().install(),
-                    chrome_options = self.chrome_options
-                    )
-            else:
-                browser = webdriver.Chrome(
-                    executable_path = self.chrome_driver_path,
-                    chrome_options = self.chrome_options
-                    )
-            browser.get(url)
-            links = np.array(browser.find_elements_by_tag_name('a'))
-            str_array = np.array([link.get_attribute('href') for link in links])
-            links = links[str_array != None]
-            str_array = str_array[str_array != None]
+        i = 0
+        downloaded = False
 
-            # Defined a vectorized mask function:
-            t_has_pattern = lambda x: has_pattern(x, patterns)
-            vectorized_has_pattern = np.vectorize(t_has_pattern)
+        while not downloaded:
+            i += 1
+            try:
+                if xpaths_method:
+                    if self.install_driver:
+                        browser = webdriver.Chrome(
+                            ChromeDriverManager().install(),
+                            chrome_options = self.chrome_options
+                            )
+                    else:
+                        browser = webdriver.Chrome(
+                            executable_path = self.chrome_driver_path,
+                            chrome_options = self.chrome_options
+                            )
+                    browser.get(url)
+                    time.sleep(5)
+                    for xpath in xpaths:
+                        browser.find_element_by_xpath(xpaths[xpath]).click()
+                        print(f"{xpath} series clicked!")
+                        time.sleep(3)
+                    time.sleep(close_time)
+                    browser.close()
+                    downloaded = True
+                else:
+                    if self.install_driver:
+                        browser = webdriver.Chrome(
+                            ChromeDriverManager().install(),
+                            chrome_options = self.chrome_options
+                            )
+                    else:
+                        browser = webdriver.Chrome(
+                            executable_path = self.chrome_driver_path,
+                            chrome_options = self.chrome_options
+                            )
+                    browser.get(url)
+                    links = np.array(browser.find_elements_by_tag_name('a'))
+                    str_array = np.array(
+                        [link.get_attribute('href') for link in links]
+                    )
+                    links = links[str_array != None]
+                    str_array = str_array[str_array != None]
 
-            links = links[vectorized_has_pattern(str_array)]
+                    # Defined a vectorized mask function:
+                    t_has_pattern = lambda x: has_pattern(x, patterns)
+                    vectorized_has_pattern = np.vectorize(t_has_pattern)
 
-            for link in links:
-                link.click()
-                time.sleep(5)
-            print("Clicks done!")
-            time.sleep(close_time)
-            browser.close()
+                    links = links[vectorized_has_pattern(str_array)]
+
+                    for link in links:
+                        link.click()
+                        time.sleep(3)
+                    print("Clicks done!")
+                    time.sleep(close_time)
+                    browser.close()
+                    downloaded = True
+            
+            except:
+                print(f"{url} didn't responded as expected. {i} failed attempts")
+                browser.close()
+                if remove_files:
+                    for file in os.listdir(self.download_path):
+                        os.remove(self.download_path+file)
+                time.sleep(i)
+                if i>=attempts:
+                    input(f"{url} IS PRESENTING PROBLEMS. PRESS ENTER TO CONTINUE")
+                    sys.exit()
 
 
 #------------------------------------------------------------------------------
