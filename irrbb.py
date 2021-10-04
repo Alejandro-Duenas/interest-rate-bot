@@ -412,7 +412,7 @@ def find_string(pattern, string_list):
     for s in string_list:
         if pattern in s:
             return s
-        else: return None               
+    return None            
 
     
 def clean_excel_file(file_path, skiprows=8, column_names=[], 
