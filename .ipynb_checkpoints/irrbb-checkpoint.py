@@ -40,7 +40,7 @@ def sim_yield_curve(beta_1=0.0175, beta_2=0.003, beta_3=0.02, lmbda=0.0609):
     -------
     beta_1: numerical value (defaut = 1)
         Parameter that can be interpreted as the level of the curve. It
-        can also be viewed as the long term factor.
+        can also be viewed as the long term factor.3
     beta_2: numerical value (default = 1)
         Parameter that can be intepreted as the slope of the curve. It 
         can be interpreted as the short-term factor.

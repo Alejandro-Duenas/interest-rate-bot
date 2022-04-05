@@ -15,7 +15,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 import time
 import numpy as np
-import sys
 import os
 
 
@@ -71,7 +70,7 @@ Path of the Chrome Driver used for the download of files. If used in other
 computer this default should be changed to the path in the local machine. It 
 also can be instroduces as an attribute of the ChromeDownload class directly.
 """
-chrome_path = 'C:\\Users\\Teletrabajo\\.wdm\\drivers\\chromedriver\\win32\\91.0.4472.101\\chromedriver.exe'
+chrome_path = 'C:\\Users\\Teletrabajo\\.wdm\\drivers\\chromedriver\\win32\\98.0.4758.102\\chromedriver.exe'
 
 """
 URL of the catalog page where the links to the files are in the BanRep 
@@ -213,8 +212,8 @@ class ChromeDownload(object):
                         os.remove(self.download_path+file)
                 time.sleep(i)
                 if i>=attempts:
-                    input(f"{url} IS PRESENTING PROBLEMS. PRESS ENTER TO CONTINUE")
-                    sys.exit()
+                    print(f"{url} IS PRESENTING PROBLEMS")
+                    raise Exception('Metodo directo no funciono')
 
 
 #------------------------------------------------------------------------------
