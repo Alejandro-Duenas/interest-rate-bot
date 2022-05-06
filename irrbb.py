@@ -153,51 +153,6 @@ def rotation_shock(yield_curve=None,short_shock=300, long_shock=150,
     
     return new_yc
 
-def total_day_series(df, date_column='', value_columns='', fill='ffill',
-                     end_date=None):
-    """Fills all calendar days with the values form the dataframe.
-    
-    Inputs:
-    -------
-    df: Pandas DataFrame object.
-        Dataframe with one column date, at least one columns with values
-        that will fill all calendar days. 
-    date_column: string
-        Name of the column with dates.
-    value_columns: string/list
-        Name or list of names with the value columns.
-    reference_point: string (options: 'ffill', 'bfill').
-        String that determines the reference point to fill the missing 
-        calendar days data. 
-    end_date: string ('dd/mm/yyyy' format, default = None)
-        End date filled with information.
-    
-    Outputs:
-    --------
-    all_calendar_df: Pandas DataFrame
-        Dataframe with all calendar days filled with the information in 
-        the inputed dataframe.
-    """
-    # Generate the all-calendar day dataframe:
-    beginning_date = df[date_column].min()
-    if isinstance(end_date, type(None)):
-        end_date = datetime.today()
-    calendar_days = pd.date_range(start=beginning_date, end=end_date)
-    all_calendar_df = pd.DataFrame(index=calendar_days).reset_index().rename(
-        columns = {'index': date_column}
-    )
-
-    # Defien returned columns:
-    if isinstance(value_columns, list):
-        return_columns = [date_column]+value_columns
-    else:
-        return_columns = [date_column, value_columns]
-    all_calendar_df = all_calendar_df.merge(
-        right = df,
-        how = 'left',
-        on = [date_column]
-    ).fillna(method=fill)[return_columns]
-    return all_calendar_df
 def get_trm_series(limit=500):
     """Call from the SFC API Socrata the historical information of the 
     TRM exchange rate.
@@ -390,10 +345,6 @@ def define_buckets(x, buckets):
 is_date = lambda x: isinstance(x, datetime)
 vec_is_date = np.vectorize(is_date)
 
-def eliminate_special_characters(string):
-    clean = re.sub(r"[^a-zA-Z0-9.,]","",string)
-    return clean
-
 def find_string(pattern, string_list):
     """Finds the string(s) inside a list that have a determined pattern.
     
@@ -414,103 +365,7 @@ def find_string(pattern, string_list):
             return s
     return None            
 
-    
-def clean_excel_file(file_path, skiprows=8, column_names=[], 
-    drop_columns=None, as_percentage=None, subset_dropna=[],
-    date_column='Fecha', value_columns=[]):
-    """This functions reads an Excel file (the model used is the format 
-    given by the BanRep Excel files) and cleans the data so that it can 
-    be used and analyzed.
-    
-    Inputs:
-    -------
-    file_path: string
-        String with the file path of the Excel file to be cleaned.
-    skiprows: Integer (default = 8)
-        Number of rows in the Excel file to be skipped during the read 
-        process.
-    column_names: List
-        List with the names of the columns that will remain after the 
-        clean process.
-    drop_columns: List (default = None)
-        List of the columns to be dropped. If None, nothing is dropped.
-    as_percentage: Boolean (default = True)
-        If true, the numerical columns will be divided by 100, so that 
-        they are expressed as percentage.
-    subset_dropna: list
-        List with initial columns that serve to drop rows if there's no
-        information.
-    date_column: str (default = 'Fecha')
-        Name of the column that contains dates. 
-    value_columns = string/list
-        Name/names of the columns that contain the analized values.
-    
-    Output:
-    -------
-    df: pandas DataFrame
-        Dataframe with the cleaned series.
-    """
-    if isinstance(subset_dropna, str):
-        subset_dropna = [subset_dropna]
-    df = pd.read_excel(file_path, skiprows=skiprows).dropna(
-        subset = subset_dropna
-    )
 
-    # Drop unwanted columns:
-    if not isinstance(drop_columns, type(None)):
-        df = df.drop(columns=drop_columns)
-    
-    df.columns = column_names
-    df[date_column] = pd.to_datetime(df[date_column])
-    df.sort_values(by=date_column, inplace=True)
-
-    # Convert to percentage:
-    if not isinstance(as_percentage, type(None)):
-        df[as_percentage] = df[as_percentage]/100
-
-    df = total_day_series(df, date_column, value_columns)
-    return df
-
-def melt_df(df, column_names=[], sort_cols='', id_vars=[], value_vars=[]):
-    """
-    Melts the DataFrame so that the columns values are now thrown as rows,
-    generating vertical replication of the id vars.
-    
-    Inputs:
-    -------
-    df: Pandas DataFrame
-        Dataframe to be melted.
-    column_names: list
-        Names that the melted DataFrame output will have.
-    sort_col: string/list
-        Column(s) that will be sorted along the id_vars
-    
-    id_vars: string/list
-        Column(s) that will identify the melted columns
-    value_vars: string/list
-        Column(s) with the values that will be melted
-    
-    Outputs:
-    --------
-    melted_df: Pandas DataFrame
-        Dataframe with the melted information.
-    """
-    sort_dict = {var: val for val, var in enumerate(value_vars)}
-    melted_df = pd.melt(df, id_vars=id_vars, value_vars=value_vars)
-    melted_df.columns = column_names
-    melted_df['sort_col'] = melted_df[sort_cols].apply(
-            lambda x: sort_dict[x]
-    )
-    if isinstance(id_vars, list):
-        sort_values = id_vars+['sort_col']
-    elif isinstance(id_vars, str):
-        sort_values = [id_vars] + ['sort_col']
-
-        print("You didn't passed as id_vars and sort_cols strings nor lists")
-    melted_df.sort_values(by=sort_values, inplace=True)
-    melted_df.drop(columns='sort_col', inplace=True)
-    
-    return melted_df
 #------------------------------------------------------------------------------
 # 4. Classes
 

@@ -50,19 +50,21 @@ patterns = {
     'IBR 3M': '.xlsx&BypassCache=true&path=%2Fshared%2fSeries%20Estad%c3%adsticas_T%2F1.%20IBR%2F%201.3.IBR_Plazo%20tres%20meses',
     'IBR 6M': '.xlsx&BypassCache=true&Path=%2fshared%2fSeries%20Estad%C3%ADsticas_T%2f1.%20IBR%2f1.5.IBR_Plazo%20seis%20meses',
     'DTF': '.xls&BypassCache=true&path=%2Fshared%2FSeries%20Estad%C3%ADsticas_T%2F1.%20Tasas%20de%20Captaci%C3%B3n%2F1.1%20Serie%20empalmada%2F1.1.2%20Semanales%2F1.1.2.1',
-    'TRM': '.xlsx&BypassCache=true&path=%2Fshared%2fSeries%20Estad%c3%adsticas_T%2F1.%20Tasa%20de%20Cambio%20Peso%20Colombiano%2F1.1%20TRM%20-%20Disponible%20desde%20el%2027%20de%20noviembre%20de%201991%2F1.1.1.TCM_Serie'
+    'TRM': '.xlsx&BypassCache=true&path=%2Fshared%2fSeries%20Estad%c3%adsticas_T%2F1.%20Tasa%20de%20Cambio%20Peso%20Colombiano%2F1.1%20TRM%20-%20Disponible%20desde%20el%2027%20de%20noviembre%20de%201991%2F1.1.1.TCM_Serie',
+    'LIBOR': 'Download&Format=excel2007&Extension=.xlsx&BypassCache=true&path=%2Fshared%2fSeries%20Estad%c3%adsticas_T%2F1.%20Tasas%20de%20inter%C3%A9s%20externas%2F1.1%20Libor%2F1.1.1.TIE_Serie%20historica%20diaria%20por%20anno%20IQY&'
 }
 
 xpaths = {
-    'IPC':'/html/body/div[3]/main/div/div/div[2]/div/p[3]/a',
-    'UVR': '/html/body/div[3]/main/div/div/div[2]/div/p[8]/a[2]',
-    'TIBR': '/html/body/div[3]/main/div/div/div[2]/div/div[24]/a',
-    'IBR O/N':'/html/body/div[3]/main/div/div/div[2]/div/div[30]/a[2]',
-    'IBR 1M': '/html/body/div[3]/main/div/div/div[2]/div/div[31]/a[2]',
-    'IBR 3M': '/html/body/div[3]/main/div/div/div[2]/div/div[32]/a[2]',
-    'IBR 6M': '/html/body/div[3]/main/div/div/div[2]/div/div[34]/a[2]',
-    'DTF': '/html/body/div[3]/main/div/div/div[2]/div/div[47]/a[2]',
-    'TRM': '/html/body/div[3]/main/div/div/div[2]/div/div[118]/a[2]'
+    'IPC':'/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/p[3]/a',
+    'UVR': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/p[8]/a[2]',
+    'TIBR': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[24]/a',
+    'IBR O/N':'/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[30]/a[2]',
+    'IBR 1M': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[31]/a[2]',
+    'IBR 3M': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[32]/a[2]',
+    'IBR 6M': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[34]/a[2]',
+    'DTF': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[47]/a[2]',
+    'TRM': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[118]/a[2]',
+    'LIBOR': '/html/body/div[2]/div[1]/div/div/div[3]/div[6]/main/section/div/section[4]/div/div[2]/div/div/div/div[72]/a'
 } 
 
 """
@@ -111,7 +113,7 @@ class ChromeDownload(object):
     
     def download_files(self, xpaths_method=True, xpaths=xpaths, 
         patterns=patterns, url=br_url, close_time=120, attempts=5,
-        remove_files=False):
+        remove_files=False, wait_time_click=5):
         """Downloads files using either the xpaths of the links or a
         pattern inside the download links. The method of search for
         those links is defiend by xpaths_method.
@@ -140,6 +142,10 @@ class ChromeDownload(object):
         remove_files: Boolean (default = False)
             If true, removes all the files in the directory where the
             new files are downloaded, determined by self.download_path
+        wait_time_click: int (default = 5)
+            Number of seconds the bot waits until doing the click action.
+            This is done to wait for the web page to completele load so
+            that the bot can find the object it is searching for.
 
         Outputs:
         --------
@@ -163,7 +169,8 @@ class ChromeDownload(object):
                             chrome_options = self.chrome_options
                             )
                     browser.get(url)
-                    time.sleep(5)
+                    time.sleep(wait_time_click)
+                    
                     for xpath in xpaths:
                         browser.find_element_by_xpath(xpaths[xpath]).click()
                         print(f"{xpath} series clicked!")
