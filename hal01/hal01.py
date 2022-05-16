@@ -15,6 +15,7 @@ import googleapiclient
 
 import pandas as pd
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from typing import Union
 import re
 import os
@@ -53,10 +54,25 @@ FILE_PATTERNS = {'TCA':'DTF','TCM':'TRM','UVR':'UVR',
                  'IBR_Plazo overnight':'IBR_ON', 'IPC':'IPC', 
                  'IBR_Plazo un mes':'IBR_1M', 'TIP':'TIBR',
                  'IBR_Plazo tres meses':'IBR_3M', 'IBR_Plazo seis':'IBR_6M',
-                 'usura':'IBC_USURA', 'Dólar':'LEMPIRA','CatCuadro':'COLON',
-                 'TIE': 'LIBOR'}
+                 'CatCuadro':'COLON', 'TIE': 'LIBOR'}
 
-#--------------------------------- Funtions ----------------------------------#
+SPN_DATE_DICT = {
+    'jan': 'ene',
+    'feb': 'feb',
+    'mar': 'mar',
+    'apr': 'abr',
+    'may': 'may',
+    'jun': 'jun',
+    'jul': 'jul',
+    'aug': 'ago',
+    'sep': 'sep',
+    'oct': 'oct',
+    'nov': 'nov',
+    'dec': 'dic'
+}
+NUM_DATE_DICT = {m: i+1 for i, m in enumerate(SPN_DATE_DICT.values())}
+
+#--------------------------------- Functions ----------------------------------#
 def clean_excel_file(file_path, skiprows=8, column_names=[], 
     drop_columns=None, as_percentage=None, subset_dropna=[],
     date_column='Fecha', value_columns=[]):
@@ -85,7 +101,7 @@ def clean_excel_file(file_path, skiprows=8, column_names=[],
     date_column: str (default = 'Fecha')
         Name of the column that contains dates. 
     value_columns = string/list
-        Name/names of the columns that contain the analized values.
+        Name/names of the columns that contain the analyzed values.
     
     Output:
     -------
@@ -138,7 +154,7 @@ def total_day_series(df, date_column='Fecha', value_columns='', fill='ffill',
     --------
     all_calendar_df: Pandas DataFrame
         Dataframe with all calendar days filled with the information in 
-        the inputed dataframe.
+        the input dataframe.
     """
     # Generate the all-calendar day dataframe:
     beginning_date = df[date_column].min()
@@ -149,7 +165,7 @@ def total_day_series(df, date_column='Fecha', value_columns='', fill='ffill',
         columns = {'index': date_column}
     )
 
-    # Defien returned columns:
+    # Define returned columns:
     if isinstance(value_columns, list):
         return_columns = [date_column]+value_columns
     else:
@@ -164,7 +180,7 @@ def total_day_series(df, date_column='Fecha', value_columns='', fill='ffill',
 
 def ibr_series(ibr_file_path:str, skiprows:int =8, name: str='', 
                ibr_names: Union[list, str] =['IBR', 'IBR.1'])-> pd.DataFrame:
-    """This funtion loads, processes and complestes the historical data
+    """This function loads, processes and completes the historical data
     from the IBR rates, downloaded from the BanRep page as Excel files.
     It returns the nominal rate column, not the effective rate.
 
@@ -267,6 +283,26 @@ def format_levels_df(val)-> dict:
     else:
         return "background-color: #7B241C; color: #FBFCFC"
 
+def parse_date_list(date_list: list) -> list:
+    """Processes a list of tuples, whose first value is the year, and
+    the second the MMM month name in spanish, and converts each tuple
+    into a datetime object. Returns a list of parsed dates.
+
+    Args:
+        date_list (list): list of tuples, whose first value is the year
+            and the second value is the spanish month name.
+
+    Returns:
+        list: list of datetime dates.
+    """
+    datetime_list = []
+    for tup in date_list:
+        temp_date = (datetime(tup[0], NUM_DATE_DICT[tup[1].lower()], 28) + 
+                     relativedelta(days=4))
+        date = temp_date - relativedelta(days=temp_date.day)
+        datetime_list.append(date)
+
+    return datetime_list
 
 # Gmail API complementary functions:
 def get_service():
@@ -379,6 +415,27 @@ def create_message_with_attachment(sender: str, to: str, subject: str,
         msg.add_header('Content-Id', '<image1>')
         msg.add_header('Content-Disposition', 'inline', filename=filename)
         message.attach(msg)
+
+    # Add boomerang: 
+    file2 = 'dav-bom.png'
+    (content_type, encoding) = mimetypes.guess_type(file2)
+        
+    if content_type is None or encoding is not None:
+        content_type = 'application/octet-stream'
+    
+    (main_type, sub_type) = content_type.split('/', 1)
+    
+    if main_type == 'image':
+        with open(file2, 'rb') as f:
+            msg = MIMEImage(f.read(), _subtype=sub_type)
+    else:
+        input_error = input("The file path passed isn't from image")
+
+    filename2 = os.path.basename(file2)
+
+    msg.add_header('Content-Id', '<image2>')
+    msg.add_header('Content-Disposition', 'inline', filename=filename2)
+    message.attach(msg)
     
     raw_msg = base64.urlsafe_b64encode(message.as_string().encode('utf-8'))
     
